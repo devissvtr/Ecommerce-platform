@@ -8,6 +8,7 @@ volumes:
   mysql_order_data:
   mysql_inventory_data:
   mysql_delivery_data:
+  mysql_warehouse_data:
 
 services:
   # Database Services
@@ -101,6 +102,24 @@ services:
       timeout: 20s
       retries: 10
 
+  warehouse-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommerce_warehouse
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_warehouse_data:/var/lib/mysql
+      - ./warehouse-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
   # Backend Services
   user-service:
     build: 
@@ -115,7 +134,7 @@ services:
       DB_NAME: ecommerce_user
       JWT_SECRET: your-super-secret-jwt-key-here
     ports:
-      - "4001:4001"
+      - "4101:4001"
     depends_on:
       user-db:
         condition: service_healthy
@@ -137,7 +156,7 @@ services:
       DB_PASSWORD: password
       DB_NAME: ecommerce_product
     ports:
-      - "4002:4002"
+      - "4102:4002"
     depends_on:
       product-db:
         condition: service_healthy
@@ -162,7 +181,7 @@ services:
       INVENTORY_SERVICE_URL: http://inventory-service:4004
       DELIVERY_SERVICE_URL: http://delivery-service:4005
     ports:
-      - "4003:4003"
+      - "4103:4003"
     depends_on:
       order-db:
         condition: service_healthy
@@ -186,7 +205,7 @@ services:
       DB_PASSWORD: password
       DB_NAME: ecommerce_inventory
     ports:
-      - "4004:4004"
+      - "4104:4004"
     depends_on:
       inventory-db:
         condition: service_healthy
@@ -208,7 +227,7 @@ services:
       DB_PASSWORD: password
       DB_NAME: ecommerce_delivery
     ports:
-      - "4005:4005"
+      - "4105:4005"
     depends_on:
       delivery-db:
         condition: service_healthy
@@ -216,6 +235,28 @@ services:
       - ecommerce-network
     volumes:
       - ./delivery-service:/app
+      - /app/node_modules
+    
+  warehouse-service:
+    build: 
+      context: ./warehouse-service
+      target: development
+    restart: unless-stopped
+    environment:
+      PORT: 4006
+      DB_HOST: warehouse-db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: ecommerce_warehouse
+    ports:
+      - "4106:4006"
+    depends_on:
+      warehouse-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./warehouse-service:/app
       - /app/node_modules
 
   api-gateway:
@@ -230,14 +271,16 @@ services:
       ORDER_SERVICE_URL: http://order-service:4003
       INVENTORY_SERVICE_URL: http://inventory-service:4004
       DELIVERY_SERVICE_URL: http://delivery-service:4005
+      WAREHOUSE_SERVICE_URL: http://warehouse-service:4006
     ports:
-      - "4000:4000"
+      - "4100:4000"
     depends_on:
       - user-service
       - product-service
       - order-service
       - inventory-service
       - delivery-service
+      - warehouse-service
     networks:
       - ecommerce-network
     volumes:
@@ -254,7 +297,7 @@ services:
       REACT_APP_API_URL: http://localhost:4000
       CHOKIDAR_USEPOLLING: true
     ports:
-      - "3000:3000"
+      - "3100:3000"
     depends_on:
       - api-gateway
     networks:

@@ -395,6 +395,13 @@ const resolvers = {
       }
       
       console.log(`📝 Found ${cartItems.length} items in cart`);
+
+    try {
+      const warehouseServiceUrl = `${WAREHOUSE_SERVICE_URL}/api/warehouses/nearest`;
+      // Implementasi pemilihan warehouse berdasarkan lokasi
+      } catch (error) {
+        console.warn('Could not determine nearest warehouse, using default');
+      }
       
       // Validate products and calculate total
       let total = 0;

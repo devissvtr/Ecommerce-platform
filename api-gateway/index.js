@@ -75,7 +75,8 @@ const createGateway = () => {
     { name: 'products', url: (process.env.PRODUCT_SERVICE_URL || 'http://localhost:4002') + '/graphql' },
     { name: 'orders', url: (process.env.ORDER_SERVICE_URL || 'http://localhost:4003') + '/graphql' },
     { name: 'inventory', url: (process.env.INVENTORY_SERVICE_URL || 'http://localhost:4004') + '/graphql' },
-    { name: 'delivery', url: (process.env.DELIVERY_SERVICE_URL || 'http://localhost:4005') + '/graphql' }
+    { name: 'delivery', url: (process.env.DELIVERY_SERVICE_URL || 'http://localhost:4005') + '/graphql' },
+    { name: 'warehouse', url: (process.env.WAREHOUSE_SERVICE_URL || 'http://localhost:4006') + '/graphql' }
   ];
 
   console.log('🔗 Configuring subgraphs:');
@@ -105,7 +106,8 @@ async function startServer() {
       { name: 'Product Service', url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:4002' },
       { name: 'Order Service', url: process.env.ORDER_SERVICE_URL || 'http://localhost:4003' },
       { name: 'Inventory Service', url: process.env.INVENTORY_SERVICE_URL || 'http://localhost:4004' },
-      { name: 'Delivery Service', url: process.env.DELIVERY_SERVICE_URL || 'http://localhost:4005' }
+      { name: 'Delivery Service', url: process.env.DELIVERY_SERVICE_URL || 'http://localhost:4005' },
+      { name: 'Warehouse Service', url: process.env.WAREHOUSE_SERVICE_URL || 'http://localhost:4006' }
     ];
 
     // Wait for all services to be ready
@@ -153,7 +155,8 @@ async function startServer() {
           checkServiceHealth(process.env.PRODUCT_SERVICE_URL || 'http://localhost:4002'),
           checkServiceHealth(process.env.ORDER_SERVICE_URL || 'http://localhost:4003'),
           checkServiceHealth(process.env.INVENTORY_SERVICE_URL || 'http://localhost:4004'),
-          checkServiceHealth(process.env.DELIVERY_SERVICE_URL || 'http://localhost:4005')
+          checkServiceHealth(process.env.DELIVERY_SERVICE_URL || 'http://localhost:4005'),
+          checkServiceHealth(process.env.WAREHOUSE_SERVICE_URL || 'http://localhost:4006')
         ]);
         
         const allServicesHealthy = serviceChecks.every(check => check);
@@ -168,7 +171,8 @@ async function startServer() {
             product: serviceChecks[1] ? 'OK' : 'ERROR',
             order: serviceChecks[2] ? 'OK' : 'ERROR',
             inventory: serviceChecks[3] ? 'OK' : 'ERROR',
-            delivery: serviceChecks[4] ? 'OK' : 'ERROR'
+            delivery: serviceChecks[4] ? 'OK' : 'ERROR',
+            warehouse: serviceChecks[5] ? 'OK' : 'ERROR'
           }
         });
       } catch (error) {
@@ -240,6 +244,13 @@ async function startServer() {
       console.log(`🌐 GraphQL endpoint: http://localhost:${PORT}/graphql`);
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
       console.log(`📋 Schema info: http://localhost:${PORT}/schema`);
+      console.log(`\n🏭 Connected Services:`);
+      console.log(`   🧑‍💼 User Service: ${process.env.USER_SERVICE_URL || 'http://localhost:4001'}`);
+      console.log(`   📦 Product Service: ${process.env.PRODUCT_SERVICE_URL || 'http://localhost:4002'}`);
+      console.log(`   🛒 Order Service: ${process.env.ORDER_SERVICE_URL || 'http://localhost:4003'}`);
+      console.log(`   📊 Inventory Service: ${process.env.INVENTORY_SERVICE_URL || 'http://localhost:4004'}`);
+      console.log(`   🚚 Delivery Service: ${process.env.DELIVERY_SERVICE_URL || 'http://localhost:4005'}`);
+      console.log(`   🏢 Warehouse Service: ${process.env.WAREHOUSE_SERVICE_URL || 'http://localhost:4006'}`);
       console.log(`\n🚀 You can now access the frontend at http://localhost:3000`);
     });
 

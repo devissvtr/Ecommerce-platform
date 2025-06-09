@@ -184,6 +184,9 @@ for service in "${services[@]}"; do
         # Add node-fetch to services that need it
         if [[ "$service" == "order-service" || "$service" == "api-gateway" ]]; then
             add_node_fetch "$service"
+
+            if [[ "$service" == "order-service" || "$service" == "api-gateway" ]]; then
+            add_node_fetch "$service"
         fi
     else
         echo -e "${RED}❌ Directory $service not found${NC}"

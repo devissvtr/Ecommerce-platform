@@ -16,4 +16,20 @@ export const REGISTER_USER = gql`
       }
     }
   }
+`;
+
+export const ADD_WAREHOUSE = gql`
+  mutation AddWarehouse($input: CreateWarehouseInput!) {
+    addWarehouse(input: $input) {
+      id
+      name
+      code
+      location
+      city
+      state
+      status
+      capacity
+      available_space
+    }
+  }
 `; 

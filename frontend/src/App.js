@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink, gql, useQuery, useMutation } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import './App.css';
+import './styles/WarehouseManagement.css';
 import AdminAllOrders from './components/AdminAllOrders';
 import DeliveryTrackingPage from './components/DeliveryTrackingPage';
 import Profile from './components/Profile';
+import WarehouseManagement from './components/WarehouseManagement';
 
 // GraphQL Client Setup with better error handling
 const httpLink = createHttpLink({
@@ -189,22 +191,71 @@ const GET_WAREHOUSES = gql`
     warehouses {
       id
       name
+      code
       location
+      city
+      state
+      status
+      capacity
+      occupied_space
+      available_space
       manager_id
+      phone
+      email
       created_at
-      updated_at
     }
   }
 `;
 
 const ADD_WAREHOUSE = gql`
-  mutation AddWarehouse($name: String!, $location: String, $manager_id: Int) {
-    addWarehouse(name: $name, location: $location, manager_id: $manager_id) {
+  mutation AddWarehouse($input: CreateWarehouseInput!) {
+    addWarehouse(input: $input) {
+      id
+      name
+      code
+      location
+      city
+      state
+      status
+      capacity
+      available_space
+    }
+  }
+`;
+
+const UPDATE_WAREHOUSE = gql`
+  mutation UpdateWarehouse($id: ID!, $input: UpdateWarehouseInput!) {
+    updateWarehouse(id: $id, input: $input) {
       id
       name
       location
-      manager_id
-      created_at
+      status
+    }
+  }
+`;
+
+const GET_WAREHOUSE_CAPACITY = gql`
+  query GetWarehouseCapacity($id: ID!) {
+    warehouseCapacity(id: $id) {
+      warehouse_id
+      total_capacity
+      occupied_space
+      available_space
+      utilization_percentage
+      last_updated
+    }
+  }
+`;
+
+const GET_NEAREST_WAREHOUSE = gql`
+  query GetNearestWarehouse($latitude: Float!, $longitude: Float!) {
+    nearestWarehouse(latitude: $latitude, longitude: $longitude) {
+      id
+      name
+      location
+      city
+      state
+      distance
     }
   }
 `;
@@ -253,6 +304,53 @@ const UPDATE_DELIVERY_STATUS = gql`
       service_id
       status
       tracking_notes
+    }
+  }
+`;
+
+const GET_PRODUCTS_WITH_INVENTORY = gql`
+  query GetProductsWithInventory($limit: Int, $offset: Int, $category_id: Int) {
+    products(limit: $limit, offset: $offset, category_id: $category_id) {
+      id
+      name
+      description
+      price
+      stock
+      image_url
+      category {
+        name
+      }
+      inventory {
+        id
+        quantity
+        available
+        warehouse {
+          id
+          name
+          location
+          city
+        }
+      }
+    }
+  }
+`;
+
+const GET_INVENTORY_WITH_WAREHOUSES = gql`
+  query GetInventoryWithWarehouses {
+    inventoryProducts {
+      id
+      product_id
+      quantity
+      reserved
+      available
+      restock_threshold
+      warehouse {
+        id
+        name
+        location
+        city
+        status
+      }
     }
   }
 `;
@@ -893,6 +991,7 @@ const AdminPanel = ({ user, showToast }) => {
   });
   
   const { data: categoriesData } = useQuery(GET_CATEGORIES);
+  const [showAddWarehouse, setShowAddWarehouse] = useState(false);
   const { data: warehousesData } = useQuery(GET_WAREHOUSES);
   const [addProduct] = useMutation(ADD_PRODUCT, {
     refetchQueries: [{ query: GET_PRODUCTS }, { query: GET_INVENTORY_PRODUCTS }],
@@ -1014,7 +1113,7 @@ const AdminPanel = ({ user, showToast }) => {
     <div className="admin-panel">
       <div className="section-header">
         <h2>Admin Panel</h2>
-        <p>Manage your store products and inventory</p>
+        <p>Manage your store products, inventory, and warehouses</p>
       </div>
       
       <div className="admin-actions">
@@ -1026,6 +1125,13 @@ const AdminPanel = ({ user, showToast }) => {
           {showAddProduct ? 'Cancel' : '+ Add New Product'}
         </button>
       </div>
+
+      {showAddWarehouse && (
+        <div className="form-section">
+          <h3>Add New Warehouse</h3>
+          {/* Warehouse form components */}
+        </div>
+      )}
 
       {showAddProduct && (
         <div className="form-section">
@@ -1222,6 +1328,8 @@ const AppContent = () => {
     switch (currentPage) {
       case 'products':
         return <ProductList user={user} setCurrentPage={setCurrentPage} showToast={showToast} />;
+      case 'warehouses':
+        return <WarehouseManagement user={user} showToast={showToast} />;
       case 'cart':
         if (user?.role !== 'customer') return <div className="auth-required">Only customers can access cart.</div>;
         return <Cart user={user} />;
@@ -1302,6 +1410,13 @@ const AppContent = () => {
                       >
                         <span className="nav-icon">⚙️</span>
                         Admin Panel
+                      </button>
+                      <button
+                        className={`nav-item ${currentPage === 'warehouses' ? 'active' : ''}`}
+                        onClick={() => { setCurrentPage('warehouses'); setSidebarOpen(false); }}
+                      >
+                        <span className="nav-icon">🏭</span>
+                        Warehouses
                       </button>
                       <button
                         className={`nav-item ${currentPage === 'all-orders' ? 'active' : ''}`}
