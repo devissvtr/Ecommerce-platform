@@ -1,0 +1,1 @@
+{"ast":null,"code":"export function preventUnhandledRejection(promise) {\n  promise.catch(function () {});\n  return promise;\n}\n//# sourceMappingURL=preventUnhandledRejection.js.map","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}

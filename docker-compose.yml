@@ -1,0 +1,264 @@
+networks:
+  ecommerce-network:
+    driver: bridge
+
+volumes:
+  mysql_user_data:
+  mysql_product_data:
+  mysql_order_data:
+  mysql_inventory_data:
+  mysql_delivery_data:
+
+services:
+  # Database Services
+  user-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommerce_user
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_user_data:/var/lib/mysql
+      - ./user-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  product-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommerce_product
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_product_data:/var/lib/mysql
+      - ./product-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  order-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommerce_order
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_order_data:/var/lib/mysql
+      - ./order-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  inventory-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommerce_inventory
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_inventory_data:/var/lib/mysql
+      - ./inventory-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  delivery-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommerce_delivery
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_delivery_data:/var/lib/mysql
+      - ./delivery-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Backend Services
+  user-service:
+    build: 
+      context: ./user-service
+      target: development
+    restart: unless-stopped
+    environment:
+      PORT: 4001
+      DB_HOST: user-db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: ecommerce_user
+      JWT_SECRET: your-super-secret-jwt-key-here
+    ports:
+      - "4001:4001"
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./user-service:/app
+      - /app/node_modules
+
+  product-service:
+    build: 
+      context: ./product-service
+      target: development
+    restart: unless-stopped
+    environment:
+      PORT: 4002
+      DB_HOST: product-db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: ecommerce_product
+    ports:
+      - "4002:4002"
+    depends_on:
+      product-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./product-service:/app
+      - /app/node_modules
+
+  order-service:
+    build: 
+      context: ./order-service
+      target: development
+    restart: unless-stopped
+    environment:
+      PORT: 4003
+      DB_HOST: order-db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: ecommerce_order
+      PRODUCT_SERVICE_URL: http://product-service:4002
+      INVENTORY_SERVICE_URL: http://inventory-service:4004
+      DELIVERY_SERVICE_URL: http://delivery-service:4005
+    ports:
+      - "4003:4003"
+    depends_on:
+      order-db:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./order-service:/app
+      - /app/node_modules
+
+  inventory-service:
+    build: 
+      context: ./inventory-service
+      target: development
+    restart: unless-stopped
+    environment:
+      PORT: 4004
+      DB_HOST: inventory-db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: ecommerce_inventory
+    ports:
+      - "4004:4004"
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./inventory-service:/app
+      - /app/node_modules
+
+  delivery-service:
+    build: 
+      context: ./delivery-service
+      target: development
+    restart: unless-stopped
+    environment:
+      PORT: 4005
+      DB_HOST: delivery-db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: ecommerce_delivery
+    ports:
+      - "4005:4005"
+    depends_on:
+      delivery-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./delivery-service:/app
+      - /app/node_modules
+
+  api-gateway:
+    build: 
+      context: ./api-gateway
+      target: development
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      USER_SERVICE_URL: http://user-service:4001
+      PRODUCT_SERVICE_URL: http://product-service:4002
+      ORDER_SERVICE_URL: http://order-service:4003
+      INVENTORY_SERVICE_URL: http://inventory-service:4004
+      DELIVERY_SERVICE_URL: http://delivery-service:4005
+    ports:
+      - "4000:4000"
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - inventory-service
+      - delivery-service
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./api-gateway:/app
+      - /app/node_modules
+
+  # Frontend Service
+  frontend:
+    build: 
+      context: ./frontend
+      target: development
+    restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: http://localhost:4000
+      CHOKIDAR_USEPOLLING: true
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules

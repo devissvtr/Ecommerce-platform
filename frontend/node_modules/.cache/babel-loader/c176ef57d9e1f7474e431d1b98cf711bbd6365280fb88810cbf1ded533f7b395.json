@@ -1,0 +1,1 @@
+{"ast":null,"code":"export { StrongCache } from \"./strong.js\";\nexport { WeakCache } from \"./weak.js\";\n//# sourceMappingURL=index.js.map","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}

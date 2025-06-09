@@ -1,0 +1,1 @@
+{"ast":null,"code":"export { AutoCleanedStrongCache, AutoCleanedWeakCache } from \"./caches.js\";\nexport { cacheSizes } from \"./sizes.js\";\n//# sourceMappingURL=index.js.map","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}
