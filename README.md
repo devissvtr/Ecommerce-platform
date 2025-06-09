@@ -61,4 +61,4 @@ docker-compose up --build
 
 ## 📹 Demo Video
 
-[![Watch the demo](https://img.youtube.com/vi/BkWG-cy5H_Q/maxresdefault.jpg)](https://youtu.be/BkWG-cy5H_Q)
+[![Watch the demo]](https://youtu.be/BkWG-cy5H_Q)
